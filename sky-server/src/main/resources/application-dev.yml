@@ -19,3 +19,7 @@ sky:
   wechat:
     appid: ${WECHAT_APPID}
     secret: ${WECHAT_SECRET}
+  baidu:
+    ak: ${BAIDU_AK}
+  shop:
+    address: 浙江省金华市婺城区迎宾大道699号
