@@ -136,22 +136,51 @@ public class OrderServiceImpl implements OrderService {
         Long userId = BaseContext.getCurrentId();
         User user = userMapper.getById(userId);
 
-        //调用微信支付接口，生成预支付交易单
-        JSONObject jsonObject = weChatPayUtil.pay(
-                ordersPaymentDTO.getOrderNumber(), //商户订单号
-                new BigDecimal(0.01), //支付金额，单位 元
-                "苍穹外卖订单", //商品描述
-                user.getOpenid() //微信用户的openid
-        );
+//        //调用微信支付接口，生成预支付交易单
+//        JSONObject jsonObject = weChatPayUtil.pay(
+//                ordersPaymentDTO.getOrderNumber(), //商户订单号
+//                new BigDecimal(0.01), //支付金额，单位 元
+//                "苍穹外卖订单", //商品描述
+//                user.getOpenid() //微信用户的openid
+//        );
+//
+//        if (jsonObject.getString("code") != null && jsonObject.getString("code").equals("ORDERPAID")) {
+//            throw new OrderBusinessException("该订单已支付");
+//        }
+//
+//        OrderPaymentVO vo = jsonObject.toJavaObject(OrderPaymentVO.class);
+//        vo.setPackageStr(jsonObject.getString("package"));
+//
+//        return vo;
+        paySuccess(ordersPaymentDTO.getOrderNumber());
 
-        if (jsonObject.getString("code") != null && jsonObject.getString("code").equals("ORDERPAID")) {
-            throw new OrderBusinessException("该订单已支付");
-        }
+        String orderNumber = ordersPaymentDTO.getOrderNumber(); //订单号
+
+        Long orderid = orderMapper.getorderId(orderNumber);//根据订单号查主键
+
+
+
+        JSONObject jsonObject = new JSONObject();//本来没有2
+
+        jsonObject.put("code", "ORDERPAID"); //本来没有3
 
         OrderPaymentVO vo = jsonObject.toJavaObject(OrderPaymentVO.class);
+
         vo.setPackageStr(jsonObject.getString("package"));
 
-        return vo;
+        //为替代微信支付成功后的数据库订单状态更新，多定义一个方法进行修改
+
+        Integer OrderPaidStatus = Orders.PAID; //支付状态，已支付
+
+        Integer OrderStatus = Orders.TO_BE_CONFIRMED; //订单状态，待接单
+
+        //发现没有将支付时间 check_out属性赋值，所以在这里更新
+
+        LocalDateTime check_out_time = LocalDateTime.now();
+
+        orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, orderid);
+
+        return vo;  //  修改支付方法中的代码
     }
 
     /**
